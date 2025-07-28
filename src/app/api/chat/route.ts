@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   try {
     const completion = await groq.chat.completions.create({
       model: 'llama3-8b-8192',
-      messages, // ici, chaque message doit avoir `role` + `parts`
+      messages, // messages doit être [{ role, content }]
       stream: true,
     });
 
@@ -34,10 +34,18 @@ export async function POST(req: Request) {
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('[Chat Error]', err.message);
+      return new Response(
+        JSON.stringify({ error: err.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    // erreur non typée
     console.error('[Chat Error]', err);
     return new Response(
-      JSON.stringify({ error: err.message || 'Something went wrong.' }),
+      JSON.stringify({ error: 'Something went wrong.' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
